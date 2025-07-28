@@ -5,7 +5,7 @@ import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-go
 import { User } from "../modules/user/user.model";
 import brcypt from "bcryptjs"
 import { envVars } from "./env";
-import { IAuthProvider, IsActive } from "../modules/user/user.interface";
+import { IAuthProvider } from "../modules/user/user.interface";
 import AppError from "../errorHelpers/AppError";
 import httpStatusCode from "http-status-codes"
 
@@ -25,8 +25,8 @@ passport.use(
 
             }
 
-            if (isUserExist.isActive !== IsActive.ACTIVE) {
-                throw new AppError(httpStatusCode.BAD_REQUEST, `User is ${isUserExist.isActive}`)
+            if (isUserExist.isBlocked) {
+                throw new AppError(httpStatusCode.BAD_REQUEST, `User is blocked`)
 
             }
 
@@ -82,8 +82,8 @@ passport.use(
 
             }
 
-            if (isUserExist.isActive !== IsActive.ACTIVE) {
-                throw new AppError(httpStatusCode.BAD_REQUEST, `User is ${isUserExist.isActive}`)
+            if (isUserExist.isBlocked) {
+                throw new AppError(httpStatusCode.BAD_REQUEST, `User is blocked`)
 
             }
 

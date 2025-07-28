@@ -1,15 +1,12 @@
 import { Types } from "mongoose";
 
-export enum IsActive {
-    ACTIVE = "ACTIVE",
-    INACTIVE = "INACTIVE",
-    BLOCKED = "BLOCKED"
-}
+
 
 export enum Role {
     SUPER_ADMIN = "SUPER_ADMIN",
     ADMIN = "ADMIN",
     USER = "USER",
+    AGENT="AGENT"
 }
 
 export interface IAuthProvider{
@@ -27,7 +24,7 @@ export interface IUser {
     picture?: string,
     isDeleted?: boolean,
     isVerified?: boolean,
-    isActive?: IsActive,
+    isBlocked?: boolean,
     role:Role,
     auth:IAuthProvider[]
 
