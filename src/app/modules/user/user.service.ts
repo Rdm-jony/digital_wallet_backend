@@ -21,7 +21,7 @@ const createUser = async (payload: Partial<IUser>) => {
     const user = await User.create({ ...payload, auth: [authProvider], password: hashPassword })
     const userObj = user.toObject();
     delete userObj.password;
-     return userObj
+    return userObj
 }
 
 const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken: JwtPayload) => {
@@ -31,31 +31,41 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
         throw new AppError(httpStatusCode.NOT_FOUND, "User Not Found")
 
     }
-
-    if (decodedToken.role === Role.USER) {
+    // যদি রোল User বা Agent হয়, তাহলে শুধু নিজেরই আপডেট করার অনুমতি
+    if (decodedToken.role === Role.USER || decodedToken.role === Role.AGENT) {
         if (decodedToken.userId !== userId) {
             throw new AppError(httpStatusCode.FORBIDDEN, "You are unauthorized to update another users profile")
         }
     }
+
+    // / Admin কে SuperAdmin আপডেট করতে দেওয়া যাবে না
+
     if (decodedToken.role === Role.ADMIN && isUserExists.role == Role.SUPER_ADMIN) {
         if (decodedToken.userId !== userId) {
             throw new AppError(httpStatusCode.FORBIDDEN, "You are not authorized to update superadmin profile")
         }
     }
 
+    // Role পরিবর্তনের অনুমতি
+
     if (payload.role) {
-        if (decodedToken.role == Role.USER) {
+        // User নিজে role পরিবর্তন করতে পারবে না
+
+        if (decodedToken.role == Role.USER || decodedToken.role == Role.AGENT) {
             throw new AppError(httpStatusCode.FORBIDDEN, "You are not authorized");
 
         }
+
+        // Admin SuperAdmin role দিতে পারবে না
 
         if (payload.role == Role.SUPER_ADMIN && decodedToken.role == Role.ADMIN) {
             throw new AppError(httpStatusCode.FORBIDDEN, "You are not authorized");
         }
 
     }
+    // কিছু ফিল্ড শুধু admin বা superadmin আপডেট করতে পারবে
 
-    if (payload.isActive || payload.isDeleted || payload.isVerified) {
+    if (payload.isBlocked || payload.isDeleted || payload.isVerified) {
         if (decodedToken.role === Role.USER) {
             throw new AppError(httpStatusCode.FORBIDDEN, "You are not authorized");
         }
