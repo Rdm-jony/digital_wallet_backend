@@ -6,6 +6,8 @@ import bcrypt from "bcryptjs"
 import { envVars } from "../../config/env";
 import { JwtPayload } from "jsonwebtoken";
 import { deleteImageFromCloudinary } from "../../config/cloudinary.config";
+import { Wallet } from "../wallet/wallet.model";
+import mongoose from "mongoose";
 
 const createUser = async (payload: Partial<IUser>) => {
     const email = payload.email
@@ -18,10 +20,21 @@ const createUser = async (payload: Partial<IUser>) => {
         provider: 'credentials',
         providerId: email as string
     }
-    const user = await User.create({ ...payload, auth: [authProvider], password: hashPassword })
-    const userObj = user.toObject();
-    delete userObj.password;
-    return userObj
+    const session = await mongoose.startSession()
+    session.startTransaction()
+    try {
+        const user = await User.create([{ ...payload, auth: [authProvider], password: hashPassword }],{session})
+        await Wallet.create([{ balance: 50, user: user[0]._id}],{session})
+        const userObj = user[0].toObject();
+        delete userObj.password;
+        await session.commitTransaction()
+        session.endSession()
+        return userObj
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
+        throw error
+    }
 }
 
 const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken: JwtPayload) => {
