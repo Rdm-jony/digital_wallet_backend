@@ -5,15 +5,17 @@ import AppError from "../../errorHelpers/AppError";
 import httpStatusCode from "http-status-codes"
 import { Role } from "../user/user.interface";
 import { User } from "../user/user.model";
+import { Transaction } from "./transaction.model";
 
 const addTransaction = async (decodedToken: JwtPayload, payload: Partial<ITransaction>) => {
-    const existSendarWallet = await Wallet.findById(payload.senderWallet)
-    const existReceiverWallet = await Wallet.findById(payload.receiverWallet)
+    const existSendarWallet = await Wallet.findById(payload?.senderWallet)
+    const existReceiverWallet = await Wallet.findById(payload?.receiverWallet)
+
     if (payload.transferType == TransferType.TOPUP) {
         if (!existReceiverWallet) {
             throw new AppError(httpStatusCode.NOT_FOUND, "Receiver wallet not found.");
         }
-        if (existReceiverWallet.user !== decodedToken.userId) {
+        if (existReceiverWallet.user.toString() !== decodedToken.userId) {
             throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: You can only top-up your own wallet.");
 
         }
@@ -23,7 +25,7 @@ const addTransaction = async (decodedToken: JwtPayload, payload: Partial<ITransa
         if (!existSendarWallet) {
             throw new AppError(httpStatusCode.NOT_FOUND, "Sender wallet not found.");
         }
-        if (existSendarWallet.user !== decodedToken.userId) {
+        if (existSendarWallet.user.toString() !== decodedToken.userId) {
             throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: You can only withdraw from your own wallet.");
 
         }
@@ -40,15 +42,17 @@ const addTransaction = async (decodedToken: JwtPayload, payload: Partial<ITransa
         if (!existReceiverWallet) {
             throw new AppError(httpStatusCode.NOT_FOUND, "Receiver wallet not found.");
         }
-        if (existSendarWallet.user !== decodedToken.userId) {
+        if (existSendarWallet.user.toString() !== decodedToken.userId) {
             throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: You can only send from your own wallet.");
 
         }
-        if (decodedToken.role == Role.AGENT) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Agents are not allowed to send money.");
+        const existReceiverRole = await User.findById(existReceiverWallet.user)
+
+        if (decodedToken.role == Role.AGENT || existReceiverRole?.role == Role.AGENT) {
+            throw new AppError(httpStatusCode.FORBIDDEN, "Agents are not allowed to perform send/received in send money.");
 
         }
-
+        
         if (existSendarWallet.balance < (payload.amount as number)) {
             throw new AppError(httpStatusCode.FORBIDDEN, "Insufficient balance.");
         }
@@ -68,7 +72,7 @@ const addTransaction = async (decodedToken: JwtPayload, payload: Partial<ITransa
         if (!existReceiverWallet) {
             throw new AppError(httpStatusCode.NOT_FOUND, "Receiver wallet not found.");
         }
-        if (existSendarWallet.user !== decodedToken.userId) {
+        if (existSendarWallet.user.toString() !== decodedToken.userId) {
             throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: Agent mismatch.");
 
         }
@@ -89,8 +93,8 @@ const addTransaction = async (decodedToken: JwtPayload, payload: Partial<ITransa
 
 
     } else if (payload.transferType == TransferType.CASHOUT) {
-        if (decodedToken.role !== Role.AGENT) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Only agents can perform cash-out.");
+        if (decodedToken.role !== Role.USER) {
+            throw new AppError(httpStatusCode.FORBIDDEN, "Only USER can perform cash-out.");
         }
         if (!existSendarWallet) {
             throw new AppError(httpStatusCode.NOT_FOUND, "Sender wallet not found.");
@@ -98,13 +102,13 @@ const addTransaction = async (decodedToken: JwtPayload, payload: Partial<ITransa
         if (!existReceiverWallet) {
             throw new AppError(httpStatusCode.NOT_FOUND, "Receiver wallet not found.");
         }
-        if (existReceiverWallet.user !== decodedToken.userId) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: Agent mismatch.");
+        if (existSendarWallet.user.toString() !== decodedToken.userId) {
+            throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: user mismatch.");
 
         }
-        const existSendarRole = await User.findById(existSendarWallet.user)
-        if (existSendarRole?.role !== Role.USER) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Sender must be a user.");
+        const existReceiverRole = await User.findById(existReceiverWallet.user)
+        if (existReceiverRole?.role !== Role.AGENT) {
+            throw new AppError(httpStatusCode.FORBIDDEN, "receiver must be a agent.");
 
         }
 
@@ -120,5 +124,13 @@ const addTransaction = async (decodedToken: JwtPayload, payload: Partial<ITransa
 
     }
 
+    const newTransaction = await Transaction.create(payload)
 
+    return newTransaction
+
+
+}
+
+export const transactionService = {
+    addTransaction
 }
