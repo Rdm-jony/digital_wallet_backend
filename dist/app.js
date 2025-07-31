@@ -41,7 +41,7 @@ app.use("/api/v1", routes_1.router);
 app.use(passport_1.default.initialize());
 app.use(passport_1.default.session());
 app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.json(200).send({ success: true, message: "user auth server running...✔" });
+    res.status(200).json({ success: true, message: "user auth server running...✔" });
 }));
 app.use(globalErrorHandler_1.globalErrorHandler);
 exports.default = app;
