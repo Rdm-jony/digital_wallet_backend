@@ -72,6 +72,17 @@ const getTransactionHistory = (catchAsync(async (req: Request, res: Response) =>
         success: true
     })
 }))
+const getAllTransaction = (catchAsync(async (req: Request, res: Response) => {
+    const allTransaction = await transactionService.getAllTransaction()
+
+    sendResponse(res, {
+        data: allTransaction,
+        message: "All Transaction history retrieved successfull",
+        statusCode: httpStatusCode.OK,
+        success: true
+    })
+}))
+
 
 export const transactionController = {
     transactionTopup,
@@ -79,5 +90,6 @@ export const transactionController = {
     transactionWithdraw,
     transactionCashin,
     transactionCashout,
-    getTransactionHistory
+    getTransactionHistory,
+    getAllTransaction
 }

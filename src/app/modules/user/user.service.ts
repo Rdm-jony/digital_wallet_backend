@@ -1,5 +1,5 @@
 import AppError from "../../errorHelpers/AppError";
-import { IAuthProvider, IUser, Role } from "./user.interface";
+import { AgentStatus, IAuthProvider, IUser, Role } from "./user.interface";
 import { User } from "./user.model";
 import httpStatusCode from "http-status-codes"
 import bcrypt from "bcryptjs"
@@ -23,8 +23,8 @@ const createUser = async (payload: Partial<IUser>) => {
     const session = await mongoose.startSession()
     session.startTransaction()
     try {
-        const user = await User.create([{ ...payload, auth: [authProvider], password: hashPassword }],{session})
-        await Wallet.create([{ balance: 50, user: user[0]._id}],{session})
+        const user = await User.create([{ ...payload, auth: [authProvider], password: hashPassword }], { session })
+        await Wallet.create([{ balance: 50, user: user[0]._id }], { session })
         const userObj = user[0].toObject();
         delete userObj.password;
         await session.commitTransaction()
@@ -39,7 +39,6 @@ const createUser = async (payload: Partial<IUser>) => {
 
 const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken: JwtPayload) => {
     const isUserExists = await User.findById(userId)
-
     if (!isUserExists) {
         throw new AppError(httpStatusCode.NOT_FOUND, "User Not Found")
 
@@ -57,6 +56,11 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
         if (decodedToken.userId !== userId) {
             throw new AppError(httpStatusCode.FORBIDDEN, "You are not authorized to update superadmin profile")
         }
+    }
+
+    if (payload.role === Role.AGENT) {
+        throw new AppError(httpStatusCode.FORBIDDEN, "role updated to agent using agent request");
+
     }
 
     // Role পরিবর্তনের অনুমতি
@@ -85,6 +89,7 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
     }
 
     const newUpdatedUser = await User.findByIdAndUpdate(userId, payload, { new: true, runValidators: true }).select("-password")
+
     if (isUserExists.picture) {
         await deleteImageFromCloudinary(isUserExists.picture)
     }
@@ -93,7 +98,11 @@ const updateUser = async (userId: string, payload: Partial<IUser>, decodedToken:
 }
 
 const getAllUser = async () => {
-    const users = await User.find({})
+    const users = await User.find({role:Role.USER})
+    return users
+}
+const getAllAgent = async () => {
+    const users = await User.find({role:Role.AGENT})
     return users
 }
 
@@ -114,10 +123,77 @@ const getMe = async (userId: string) => {
     return isUserExists
 }
 
+const requestAgent = async (userId: string) => {
+
+    const isUserExists = await User.findById(userId);
+
+    if (!isUserExists) {
+        throw new AppError(404, "User not found")
+    }
+    if (isUserExists.agentRequest === "PENDING") {
+        throw new AppError(400, "Already requested")
+    }
+
+    isUserExists.agentRequest = AgentStatus.PENDING;
+    await isUserExists.save();
+
+};
+
+const approveAgentRequest = async (userId: string) => {
+    const isUserExists = await User.findById(userId);
+
+    if (!isUserExists) {
+        throw new AppError(404, "User not found")
+    }
+
+    if (isUserExists.agentRequest == AgentStatus.APPROVED) {
+        throw new AppError(400, "Already approved")
+
+    }
+
+    isUserExists.role = Role.AGENT;
+    isUserExists.agentRequest = AgentStatus.APPROVED;
+    await isUserExists.save();
+
+};
+const suspendAgentRequest = async (userId: string) => {
+    const isUserExists = await User.findById(userId);
+
+    if (!isUserExists) {
+        throw new AppError(404, "User not found")
+    }
+
+    if (isUserExists.agentRequest == AgentStatus.SUSPENDED) {
+        throw new AppError(400, "Already suspended")
+
+    }
+
+    isUserExists.agentRequest = AgentStatus.SUSPENDED;
+    const session = await mongoose.startSession()
+    session.startTransaction()
+
+    try {
+        await isUserExists.save({ session });
+        await Wallet.updateOne({ user: isUserExists._id }, { $set: { isBlocked: true } }, { session });
+        await session.abortTransaction()
+        session.endSession()
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
+        throw error
+    }
+
+};
+
+
 export const userService = {
     createUser,
     getAllUser,
+    getAllAgent,
     updateUser,
     getMe,
-    getSingleUser
+    getSingleUser,
+    requestAgent,
+    approveAgentRequest,
+    suspendAgentRequest
 }

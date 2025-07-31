@@ -11,7 +11,7 @@ import { getValidateWallet } from "../../utils/getValidateWallet";
 
 
 const transactionTopup = async (decodedToken: JwtPayload, payload: Partial<ITransaction>) => {
-    const existReceiverWallet = await getValidateWallet(decodedToken.userId, "receiver")
+    const existReceiverWallet = await getValidateWallet(decodedToken.userId, "your")
     existReceiverWallet.balance += payload.amount as number
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -197,11 +197,17 @@ const getTransactionHistory = async (userId: string) => {
     });
 }
 
+const getAllTransaction = async () => {
+    const allTransaction = await Transaction.find({})
+    return allTransaction
+}
+
 export const transactionService = {
     getTransactionHistory,
     transactionTopup,
     transactionWithdraw,
     transactionSendMoney,
     transactionCashin,
+    getAllTransaction,
     transactionCashout
 }

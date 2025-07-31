@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { IAuthProvider, IUser, Role } from "./user.interface";
+import { AgentStatus, IAuthProvider, IUser, Role } from "./user.interface";
 
 export const authProvideSchema = new Schema<IAuthProvider>({
     provider: { type: String, required: true },
@@ -20,6 +20,7 @@ const userSchema = new Schema<IUser>({
     phone: { type: String },
     picture: { type: String },
     role: { type: String, enum: Object.values(Role), default: Role.USER },
+    agentRequest: { type: String, enum: Object.values(AgentStatus), default: AgentStatus.NONE },
     auth: [authProvideSchema]
 }, {
     timestamps: true

@@ -12,7 +12,8 @@ const transactionSchema = new Schema<ITransaction>({
     receiverWallet: {
         type: Schema.Types.ObjectId,
         ref: "Wallet"
-    }
+    },
+    
 
 }, {
     timestamps: true

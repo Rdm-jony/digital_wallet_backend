@@ -6,6 +6,7 @@ import { Role } from "../user/user.interface";
 const router = Router()
 
 router.get("/me", checkAuth(Role.USER, Role.AGENT), walletController.getWallet)
+router.get("/all-wallet", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), walletController.getAllWallet)
 router.patch("/block/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), walletController.blocktWallet)
 router.patch("/unblock/:id", checkAuth(Role.ADMIN, Role.SUPER_ADMIN), walletController.unblocktWallet)
 

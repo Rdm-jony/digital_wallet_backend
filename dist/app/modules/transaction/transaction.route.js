@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.transactionRoutes = void 0;
+const express_1 = require("express");
+const transaction_controller_1 = require("./transaction.controller");
+const checkAuth_1 = require("../../middlewares/checkAuth");
+const user_interface_1 = require("../user/user.interface");
+const validateRequest_1 = require("../../middlewares/validateRequest");
+const transaction_validation_1 = require("./transaction.validation");
+const router = (0, express_1.Router)();
+router.post("/topup", (0, checkAuth_1.checkAuth)(user_interface_1.Role.USER, user_interface_1.Role.AGENT), (0, validateRequest_1.validateRequest)(transaction_validation_1.toupSchema), transaction_controller_1.transactionController.transactionTopup);
+router.post("/withdraw", (0, checkAuth_1.checkAuth)(user_interface_1.Role.USER, user_interface_1.Role.AGENT), (0, validateRequest_1.validateRequest)(transaction_validation_1.withDrawSchema), transaction_controller_1.transactionController.transactionWithdraw);
+router.post("/send-money", (0, checkAuth_1.checkAuth)(user_interface_1.Role.USER), (0, validateRequest_1.validateRequest)(transaction_validation_1.sendMoneySchema), transaction_controller_1.transactionController.transactionSendMoney);
+router.post("/cashIn", (0, checkAuth_1.checkAuth)(user_interface_1.Role.AGENT), (0, validateRequest_1.validateRequest)(transaction_validation_1.cashInSchema), transaction_controller_1.transactionController.transactionCashin);
+router.post("/cashOut", (0, checkAuth_1.checkAuth)(user_interface_1.Role.USER), (0, validateRequest_1.validateRequest)(transaction_validation_1.cashOutSchema), transaction_controller_1.transactionController.transactionCashout);
+router.get("/history", (0, checkAuth_1.checkAuth)(user_interface_1.Role.USER, user_interface_1.Role.AGENT), transaction_controller_1.transactionController.getTransactionHistory);
+router.get("/all-transaction", (0, checkAuth_1.checkAuth)(user_interface_1.Role.ADMIN, user_interface_1.Role.SUPER_ADMIN), transaction_controller_1.transactionController.getTransactionHistory);
+exports.transactionRoutes = router;

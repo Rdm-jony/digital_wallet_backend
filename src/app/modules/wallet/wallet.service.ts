@@ -40,8 +40,14 @@ const unblockWallet = async (walletId: string) => {
     await isWalletExist.save()
 }
 
+const getAllWallet=async()=>{
+    const allWallet= await Wallet.find({})
+    return allWallet
+}
+
 export const walletService = {
     getWallet,
+    getAllWallet,
     blockWallet,
     unblockWallet
 }

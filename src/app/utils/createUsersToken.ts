@@ -1,5 +1,5 @@
 import { envVars } from "../config/env"
-import { IsActive, IUser } from "../modules/user/user.interface"
+import { AgentStatus, IUser } from "../modules/user/user.interface"
 import httpStatusCode from "http-status-codes"
 import { generateToken, verifyToken } from "./jwt"
 import { User } from "../modules/user/user.model"
@@ -30,8 +30,8 @@ export const generateNewAccessTokenByRefreshToken = async (refreshToken: string)
 
     }
 
-    if (isUserExist.isActive !== IsActive.ACTIVE) {
-        throw new AppError(httpStatusCode.BAD_REQUEST, `User is ${isUserExist.isActive}`)
+    if ( isUserExist.isBlocked || isUserExist.agentRequest==AgentStatus.SUSPENDED) {
+        throw new AppError(httpStatusCode.BAD_REQUEST, `User is blocked or suspended`)
 
     }
 

@@ -5,7 +5,7 @@ import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-go
 import { User } from "../modules/user/user.model";
 import brcypt from "bcryptjs"
 import { envVars } from "./env";
-import { IAuthProvider } from "../modules/user/user.interface";
+import { AgentStatus, IAuthProvider } from "../modules/user/user.interface";
 import AppError from "../errorHelpers/AppError";
 import httpStatusCode from "http-status-codes"
 
@@ -25,8 +25,8 @@ passport.use(
 
             }
 
-            if (isUserExist.isBlocked) {
-                throw new AppError(httpStatusCode.BAD_REQUEST, `User is blocked`)
+            if (isUserExist.isBlocked || isUserExist.agentRequest == AgentStatus.SUSPENDED) {
+                throw new AppError(httpStatusCode.BAD_REQUEST, `User is blocked or suspended`)
 
             }
 
@@ -38,7 +38,7 @@ passport.use(
             if (!isPasswordCorrect) {
                 return done("Invalid email or password.");
             }
-            const user=isUserExist.toObject()
+            const user = isUserExist.toObject()
             delete user.password
 
             return done(null, user)
@@ -82,8 +82,8 @@ passport.use(
 
             }
 
-            if (isUserExist.isBlocked) {
-                throw new AppError(httpStatusCode.BAD_REQUEST, `User is blocked`)
+            if (isUserExist.isBlocked || isUserExist.agentRequest == AgentStatus.SUSPENDED) {
+                throw new AppError(httpStatusCode.BAD_REQUEST, `User is blocked or suspended`)
 
             }
 

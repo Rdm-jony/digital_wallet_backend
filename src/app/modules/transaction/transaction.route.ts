@@ -13,5 +13,6 @@ router.post("/send-money",checkAuth(Role.USER),validateRequest(sendMoneySchema),
 router.post("/cashIn",checkAuth(Role.AGENT),validateRequest(cashInSchema),transactionController.transactionCashin)
 router.post("/cashOut",checkAuth(Role.USER),validateRequest(cashOutSchema),transactionController.transactionCashout)
 router.get("/history",checkAuth(Role.USER,Role.AGENT),transactionController.getTransactionHistory)
+router.get("/all-transaction",checkAuth(Role.ADMIN,Role.SUPER_ADMIN),transactionController.getTransactionHistory)
 
 export const transactionRoutes=router

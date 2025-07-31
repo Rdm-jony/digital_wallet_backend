@@ -36,9 +36,19 @@ const unblocktWallet = catchAsync(async (req: Request, res: Response) => {
         success: true
     })
 })
+const getAllWallet = catchAsync(async (req: Request, res: Response) => {
+    const allWallet = await walletService.getAllWallet()
+    sendResponse(res, {
+        data: allWallet,
+        message: "wallet unblocked successfully",
+        statusCode: httpStatusCode.OK,
+        success: true
+    })
+})
 
 export const walletController = {
     getWallet,
+    getAllWallet,
     blocktWallet,
     unblocktWallet
 }
