@@ -30,17 +30,26 @@ const getAllUser = catchAsync(async (req: Request, res: Response) => {
         success: true
     })
 })
+const getAllAgent = catchAsync(async (req: Request, res: Response) => {
+    const user = await userService.getAllAgent()
+    sendResponse(res, {
+        data: user,
+        message: "all agents retrived successfully",
+        statusCode: httpStatusCode.OK,
+        success: true
+    })
+})
 const updateUser = catchAsync(async (req: Request, res: Response) => {
     const userId = req.params.id
     const decodedToken = req.user as JwtPayload
     const payload: Partial<IUser> = {
         ...req.body,
-        picture:req?.file?.path
+        picture: req?.file?.path
     }
     const user = await userService.updateUser(userId, payload, decodedToken)
     sendResponse(res, {
         data: user,
-        message: "all user retrived successfully",
+        message: " user update successfully",
         statusCode: httpStatusCode.OK,
         success: true
     })
@@ -65,13 +74,47 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
         success: true
     })
 })
+const requestAgent = catchAsync(async (req: Request, res: Response) => {
+    const decodedToken = req.user as JwtPayload
+    await userService.requestAgent(decodedToken.userId)
+    sendResponse(res, {
+        data: null,
+        message: "agent request send successfully",
+        statusCode: httpStatusCode.OK,
+        success: true
+    })
+})
+const approveAgentRequest = catchAsync(async (req: Request, res: Response) => {
+    const userId = req.params.id
+    await userService.approveAgentRequest(userId)
+    sendResponse(res, {
+        data: null,
+        message: "agent request approved successfully",
+        statusCode: httpStatusCode.OK,
+        success: true
+    })
+})
+const suspenAgentRequest = catchAsync(async (req: Request, res: Response) => {
+    const userId = req.params.id
+    await userService.suspendAgentRequest(userId)
+    sendResponse(res, {
+        data: null,
+        message: "agent suspended",
+        statusCode: httpStatusCode.OK,
+        success: true
+    })
+})
 
 
 
 export const userController = {
     createUser,
     getAllUser,
+    getAllAgent,
     updateUser,
     getSingleUser,
-    getMe
+    getMe,
+    requestAgent,
+    approveAgentRequest,
+    suspenAgentRequest
 }

@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs"
 import AppError from "../../errorHelpers/AppError"
 import httpStatusCode from "http-status-codes"
 import { envVars } from "../../config/env"
-import { IAuthProvider } from "../user/user.interface"
+import { AgentStatus, IAuthProvider } from "../user/user.interface"
 import { generateToken } from "../../utils/jwt"
 import { sendMail } from "../../utils/sendMail"
 
@@ -67,8 +67,9 @@ const forgetPassword = async (email: string) => {
     if (!isUserExist.isVerified) {
         throw new AppError(httpStatusCode.BAD_REQUEST, "User is not verified")
     }
-    if (isUserExist.isBlocked) {
-        throw new AppError(httpStatusCode.BAD_REQUEST, `User is blocked`)
+    if (isUserExist.isBlocked || isUserExist.agentRequest == AgentStatus.SUSPENDED) {
+        throw new AppError(httpStatusCode.BAD_REQUEST, `User is blocked or suspended`)
+
     }
     if (isUserExist.isDeleted) {
         throw new AppError(httpStatusCode.BAD_REQUEST, "User is deleted")

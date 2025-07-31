@@ -14,6 +14,14 @@ export interface IAuthProvider{
     providerId:string
 }
 
+export enum AgentStatus{
+    NONE="NONE",
+    PENDING="PENDING",
+    APPROVED="APPROVED",
+    SUSPENDED="SUSPENDED"
+    
+}
+
 export interface IUser {
     _id?: Types.ObjectId,
     name: string,
@@ -25,6 +33,7 @@ export interface IUser {
     isDeleted?: boolean,
     isVerified?: boolean,
     isBlocked?: boolean,
+    agentRequest?:AgentStatus;
     role:Role,
     auth:IAuthProvider[]
 

@@ -32,7 +32,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.get('/', async (req: Request, res: Response) => {
-    res.json(200).send({ success: true, message: "user auth server running...✔" })
+    res.status(200).json({ success: true, message: "user auth server running...✔" })
 })
 
 app.use(globalErrorHandler)

@@ -1,124 +1,213 @@
 import { JwtPayload } from "jsonwebtoken";
-import { ITransaction, TransferType } from "./transaction.interface";
+import { ITransaction, PaymentStatus, TransferType } from "./transaction.interface";
 import { Wallet } from "../wallet/wallet.model";
 import AppError from "../../errorHelpers/AppError";
 import httpStatusCode from "http-status-codes"
 import { Role } from "../user/user.interface";
 import { User } from "../user/user.model";
-
-const addTransaction = async (decodedToken: JwtPayload, payload: Partial<ITransaction>) => {
-    const existSendarWallet = await Wallet.findById(payload.senderWallet)
-    const existReceiverWallet = await Wallet.findById(payload.receiverWallet)
-    if (payload.transferType == TransferType.TOPUP) {
-        if (!existReceiverWallet) {
-            throw new AppError(httpStatusCode.NOT_FOUND, "Receiver wallet not found.");
-        }
-        if (existReceiverWallet.user !== decodedToken.userId) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: You can only top-up your own wallet.");
-
-        }
-        existReceiverWallet.balance += payload.amount as number
-        await existReceiverWallet.save()
-    } else if (payload.transferType == TransferType.WITHDRAW) {
-        if (!existSendarWallet) {
-            throw new AppError(httpStatusCode.NOT_FOUND, "Sender wallet not found.");
-        }
-        if (existSendarWallet.user !== decodedToken.userId) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: You can only withdraw from your own wallet.");
-
-        }
-        if (existSendarWallet.balance < (payload.amount as number)) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Insufficient balance.");
-
-        }
-        existSendarWallet.balance -= payload.amount as number
-        await existSendarWallet.save()
-    } else if (payload.transferType == TransferType.SENDMONEY) {
-        if (!existSendarWallet) {
-            throw new AppError(httpStatusCode.NOT_FOUND, "Sender  wallet not found.");
-        }
-        if (!existReceiverWallet) {
-            throw new AppError(httpStatusCode.NOT_FOUND, "Receiver wallet not found.");
-        }
-        if (existSendarWallet.user !== decodedToken.userId) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: You can only send from your own wallet.");
-
-        }
-        if (decodedToken.role == Role.AGENT) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Agents are not allowed to send money.");
-
-        }
-
-        if (existSendarWallet.balance < (payload.amount as number)) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Insufficient balance.");
-        }
-        existSendarWallet.balance -= payload.amount as number
-        existReceiverWallet.balance += payload.amount as number
-
-        await existReceiverWallet.save()
-        await existSendarWallet.save()
-    } else if (payload.transferType == TransferType.CASHIN) {
-        if (decodedToken.role != Role.AGENT) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Only agents can perform cash-in.");
-
-        }
-        if (!existSendarWallet) {
-            throw new AppError(httpStatusCode.NOT_FOUND, "Sender wallet not found.");
-        }
-        if (!existReceiverWallet) {
-            throw new AppError(httpStatusCode.NOT_FOUND, "Receiver wallet not found.");
-        }
-        if (existSendarWallet.user !== decodedToken.userId) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: Agent mismatch.");
-
-        }
-        const existReceiverRole = await User.findById(existReceiverWallet.user)
-        if (existReceiverRole?.role == Role.AGENT) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Agents cannot cash-in to another agent.");
-
-        }
-
-        if (existSendarWallet.balance < (payload.amount as number)) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Insufficient balance.");
-        }
-        existReceiverWallet.balance += payload.amount as number
-        existSendarWallet.balance -= payload.amount as number
-
-        await existReceiverWallet.save()
-        await existSendarWallet.save()
+import { Transaction } from "./transaction.model";
+import mongoose from "mongoose";
+import { getValidateWallet } from "../../utils/getValidateWallet";
 
 
-    } else if (payload.transferType == TransferType.CASHOUT) {
-        if (decodedToken.role !== Role.AGENT) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Only agents can perform cash-out.");
-        }
-        if (!existSendarWallet) {
-            throw new AppError(httpStatusCode.NOT_FOUND, "Sender wallet not found.");
-        }
-        if (!existReceiverWallet) {
-            throw new AppError(httpStatusCode.NOT_FOUND, "Receiver wallet not found.");
-        }
-        if (existReceiverWallet.user !== decodedToken.userId) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Unauthorized: Agent mismatch.");
+const transactionTopup = async (decodedToken: JwtPayload, payload: Partial<ITransaction>) => {
+    const existReceiverWallet = await getValidateWallet(decodedToken.userId, "your")
+    existReceiverWallet.balance += payload.amount as number
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        await existReceiverWallet.save({ session })
+        const [newTransaction] = await Transaction.create([{
+            ...payload,
+            receiverWallet: existReceiverWallet._id,
+            transferType: TransferType.TOPUP,
+            status: PaymentStatus.SUCCESS
+        }], { session });
+        await session.commitTransaction()
+        session.endSession()
+        return newTransaction
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
+        throw error;
+    }
+}
+const transactionWithdraw = async (decodedToken: JwtPayload, payload: Partial<ITransaction>) => {
 
-        }
-        const existSendarRole = await User.findById(existSendarWallet.user)
-        if (existSendarRole?.role !== Role.USER) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "Sender must be a user.");
+    const existSendarWallet = await getValidateWallet(decodedToken.userId, "your")
+    if (existSendarWallet.balance < (payload.amount as number)) {
+        throw new AppError(httpStatusCode.FORBIDDEN, "Insufficient balance.");
 
-        }
+    }
+    existSendarWallet.balance -= payload.amount as number
 
-        if (existSendarWallet.balance < (payload.amount as number)) {
-            throw new AppError(httpStatusCode.FORBIDDEN, "User has insufficient balance.");
-        }
-        existReceiverWallet.balance += payload.amount as number
-        existSendarWallet.balance -= payload.amount as number
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        await existSendarWallet.save({ session })
+        const [newTransaction] = await Transaction.create([{
+            ...payload,
+            senderWallet: existSendarWallet._id,
+            transferType: TransferType.WITHDRAW,
+            status: PaymentStatus.SUCCESS
+        }], { session });
+        await session.commitTransaction()
+        session.endSession()
+        return newTransaction
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
+        throw error;
+    }
+}
 
-        await existReceiverWallet.save()
-        await existSendarWallet.save()
+const transactionSendMoney = async (decodedToken: JwtPayload, payload: Partial<ITransaction>) => {
+    if (!payload?.receiverWallet) {
+        throw new AppError(httpStatusCode.BAD_REQUEST, "Receiver wallet is required");
+    }
+    const existReceiverWallet = await getValidateWallet(payload?.receiverWallet, "receiver")
+    const existSendarWallet = await getValidateWallet(decodedToken.userId, "your")
 
+    const existReceiverRole = await User.findById(existReceiverWallet.user)
+
+    if (existReceiverRole?.role == Role.AGENT) {
+        throw new AppError(httpStatusCode.FORBIDDEN, "receiver wallet is a agent.you cannot send money");
 
     }
 
+    if (existReceiverRole?._id.toString() === decodedToken.userId) {
+        throw new AppError(httpStatusCode.BAD_REQUEST, "receiver wallet is you.you cannot send money to you");
 
+    }
+
+    if (existSendarWallet.balance < (payload.amount as number)) {
+        throw new AppError(httpStatusCode.FORBIDDEN, "Insufficient balance.");
+    }
+    existSendarWallet.balance -= payload.amount as number
+    existReceiverWallet.balance += payload.amount as number
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        await existReceiverWallet.save({ session })
+        await existSendarWallet.save({ session })
+        const [newTransaction] = await Transaction.create([{
+            ...payload,
+            senderWallet: existSendarWallet._id,
+            transferType: TransferType.SENDMONEY,
+            status: PaymentStatus.SUCCESS
+        }], { session });
+        await session.commitTransaction()
+        session.endSession()
+        return newTransaction
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
+        throw error;
+    }
+}
+const transactionCashin = async (decodedToken: JwtPayload, payload: Partial<ITransaction>) => {
+    if (!payload?.receiverWallet) {
+        throw new AppError(httpStatusCode.BAD_REQUEST, "Receiver wallet is required");
+    }
+    const existReceiverWallet = await getValidateWallet(payload?.receiverWallet, "receiver")
+    const existSendarWallet = await getValidateWallet(decodedToken.userId, "your")
+
+    const existReceiverRole = await User.findById(existReceiverWallet.user)
+    if (existReceiverRole?.role == Role.AGENT) {
+        throw new AppError(httpStatusCode.FORBIDDEN, "Agents cannot cash-in to another agent.");
+
+    }
+
+    if (existSendarWallet.balance < (payload.amount as number)) {
+        throw new AppError(httpStatusCode.FORBIDDEN, "Insufficient balance.");
+    }
+    existReceiverWallet.balance += payload.amount as number
+    existSendarWallet.balance -= payload.amount as number
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        await existReceiverWallet.save({ session })
+        await existSendarWallet.save({ session })
+
+        const [newTransaction] = await Transaction.create([{
+            ...payload,
+            senderWallet: existSendarWallet._id,
+            transferType: TransferType.CASHIN,
+            status: PaymentStatus.SUCCESS
+        }], { session })
+        await session.commitTransaction()
+        session.endSession()
+        return newTransaction
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
+        throw error;
+    }
+}
+const transactionCashout = async (decodedToken: JwtPayload, payload: Partial<ITransaction>) => {
+    if (!payload?.receiverWallet) {
+        throw new AppError(httpStatusCode.BAD_REQUEST, "Receiver wallet is required");
+    }
+    const existReceiverWallet = await getValidateWallet(payload?.receiverWallet, "receiver")
+    const existSendarWallet = await getValidateWallet(decodedToken.userId, "your")
+
+
+    const existReceiverRole = await User.findById(existReceiverWallet.user)
+    if (existReceiverRole?.role !== Role.AGENT) {
+        throw new AppError(httpStatusCode.FORBIDDEN, "receiver must be a agent.");
+
+    }
+
+    if (existSendarWallet.balance < (payload.amount as number)) {
+        throw new AppError(httpStatusCode.FORBIDDEN, "User has insufficient balance.");
+    }
+    existReceiverWallet.balance += payload.amount as number
+    existSendarWallet.balance -= payload.amount as number
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        await existReceiverWallet.save({ session })
+        await existSendarWallet.save({ session })
+
+        const [newTransaction] = await Transaction.create([{
+            ...payload,
+            senderWallet: existSendarWallet._id,
+            transferType: TransferType.CASHOUT,
+            status: PaymentStatus.SUCCESS
+        }], { session });
+        await session.commitTransaction()
+        session.endSession()
+        return newTransaction
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
+        throw error;
+    }
+}
+
+const getTransactionHistory = async (userId: string) => {
+    const isWalletExist = await Wallet.findOne({ user: userId })
+    if (!isWalletExist) {
+        throw new AppError(httpStatusCode.NOT_FOUND, "wallet not found")
+    }
+    return await Transaction.find({
+        $or: [{ senderWallet: isWalletExist }, { receiverWallet: isWalletExist }]
+    });
+}
+
+const getAllTransaction = async () => {
+    const allTransaction = await Transaction.find({})
+    return allTransaction
+}
+
+export const transactionService = {
+    getTransactionHistory,
+    transactionTopup,
+    transactionWithdraw,
+    transactionSendMoney,
+    transactionCashin,
+    getAllTransaction,
+    transactionCashout
 }
