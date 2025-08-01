@@ -9,6 +9,7 @@ import { envVars } from "./app/config/env";
 import './app/config/passport';
 import cookieParser from "cookie-parser";
 import cors from "cors"
+import notFound from "./app/middlewares/notFound";
 const app = express()
 
 app.use(express.json())
@@ -36,5 +37,6 @@ app.get('/', async (req: Request, res: Response) => {
 })
 
 app.use(globalErrorHandler)
+app.use(notFound)
 
 export default app
