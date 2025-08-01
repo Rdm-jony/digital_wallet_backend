@@ -1,268 +1,710 @@
-# 🛡️ User Authentication Backend (TypeScript + Node.js)
 
-A full-featured authentication backend built with **Node.js**, **Express**, and **TypeScript** that supports secure login, Google OAuth, role-based access, JWT authentication, OTP-based password recovery, and file upload.
+# 💳 Digital Wallet API
+
+A RESTful API backend for managing a digital wallet system with user roles, OTP verification, wallet transactions (top-up, withdraw, send), and role-based access.
+
+---
+## 🔗 **Live URL**: [https://digital-wallet-beckend.vercel.app](https://digital-wallet-beckend.vercel.app)
+
+
+## 🧰 Tech Stack
+- Node.js + Express
+- TypeScript
+- MongoDB
+- JWT Auth + OTP
+- Redis (for OTP and session control)
+- Cloudinary (optional)
+- Deployment: Vercel
+
+---
+
+## 📁 Folder Structure (src/)
+```
+src/
+├── app.ts                # App initialization
+├── server.ts             # Server setup
+├── app/
+│   ├── config/           # Environment configs, Redis, Cloudinary, Passport
+│   ├── errorHelpers/     # Custom error classes & handlers
+│   ├── interfaces/       # TypeScript types/interfaces
+│   ├── middlewares/      # Middlewares (auth, error handler)
+│   ├── modules/          # Features: auth, otp, user, wallet, transaction
+│   ├── routes/           # Main route exporter
+│   └── utils/            # Utility functions (JWT, Mail, OTP, etc.)
+```
 
 ---
 
 ## ✨ Features
+### 🔐 Authentication & Authorization
+✅ JWT-based login system with three distinct roles: admin, user, and agent
 
-- ✅ User login via credentials & Google OAuth
-- 🔐 JWT access & refresh token system
-- 👥 Role-based access control (`user`, `admin`, `superadmin`)
-- 🔁 Token refresh logic
-- 📧 Forgot password with email OTP
-- 🧾 EJS templated emails
-- 🛡️ Secure cookie handling
-- 📁 File upload (Multer + Cloudinary)
-- ✅ Input validation using Zod
-- 🚧 Global error handler & custom AppError class
-- 🧠 Clean modular architecture (Controller-Service-Route)
+✅ Secure password hashing using bcrypt
+
+✅ Role-based route protection to restrict access based on roles
+
+### 👤 User Features
+✅ Automatic wallet creation upon registration with an initial balance of ৳50
+
+✅ Ability to:
+
+- 💰 Top-up (add money to own wallet)
+
+- 💸 Withdraw funds
+
+- 🔁 Send money to another user
+
+📜 View transaction history
+
+### 🧑‍💼 Agent Features
+✅ Can cash-in (add money) to any user's wallet
+
+✅ Can cash-out (withdraw money) from any user's wallet
+
+✅ Optionally view their commission history
+
+### 🛠️ Admin Features
+✅ View all users, agents, wallets, and transactions
+
+✅ Block/unblock any user's wallet
+
+✅ Approve/suspend agent accounts
+
+✅ Optionally set system parameters, such as transaction fees or commission rates
+
+### 📊 Transaction System
+✅ Every financial operation (top-up, send, withdraw, cash-in, cash-out) is  trackable
+
+✅ Clear separation of transaction types for audit and reporting
+
+### 🛡️ Security
+✅ Role-based access control
+
+✅ OTP-based verification for sensitive operations
+
+✅ Secure authentication and authorization flows
 
 ---
 
+## 📦 API Endpoints
+
+
+# 🔐 User API Endpoin
+
+### ✅ POST `/api/v1/user/create`
+
+**Description:**  
+Create a new user with optional file upload (e.g., profile picture).
+
+**Headers:**  
+`Content-Type: multipart/form-data`
+
+**Request Body (form-data):**  
+- `file` (optional): image or file to upload  
+- Other fields (as JSON keys in form-data):  
+```
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "securePassword123",
+  "role": "USER"
+}
+```
+---
+✅ **GET** `/api/v1/user/all-users`
+
+**Description:**  
+Get a list of all users.
+
+**Authorization:**  
+Required — Roles: `ADMIN`, `SUPER_ADMIN`
+
+**Response:**  
+Array of user objects.
+
+---
+✅ **GET** `/api/v1/user/get-me`
+
+**Description:**  
+Get the currently authenticated user's profile.
+
+**Authorization:**  
+Required — All roles
+
+**Response:**  
+User object for the authenticated user.
+
+---
+✅ **POST** `/api/v1/user/request-agent`
+
+**Description:**  
+Request to become an agent.
+
+**Authorization:**  
+Required — Role: `USER`
+
+**Request Body:**  
+_No body required._
+
+**Response:**  
+Success message or updated user information.
+
+---
+✅ **GET** `/api/v1/user/:id`
+
+**Description:**  
+Get a single user by ID.
+
+**Authorization:**  
+Required — Roles: `ADMIN`, `SUPER_ADMIN`
+
+**Response:**  
+User object.
+
+---
+✅ **PATCH** `/api/v1/user/:id`
+
+**Description:**  
+Update user details with optional file upload.
+
+
+**Authorization:**  
+Required — All roles
+
+
+**Headers:**  
+
+| Content-Type  | multipart/form-data   
+
+
+**Request Body (form-data):**
+
+- `file` (optional): file upload  
+- Other fields as JSON keys in form-data:
+
+```
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "role": "AGENT",
+   ....
+}
+````
+---
+✅ **PATCH** `/api/v1/user/approve-agent/:id`
+
+**Description:**  
+Approve a user's request to become an agent.
+
+**Authorization:**  
+Required — Roles: `ADMIN`, `SUPER_ADMIN`
+
+**Response:**  
+Success message or updated agent status.
+
+---
+✅ **PATCH** `/api/v1/user/suspend-agent/:id`
+
+**Description:**  
+Suspend an agent user.
+
+**Authorization:**  
+Required — Roles: `ADMIN`, `SUPER_ADMIN`
+
+
+**Response:**  
+Success message or updated agent status.
+
+
+---
+# 🔐 Auth API Endpoints
+
+These routes handle user authentication, password management, and Google OAuth.
+
+
+### 🔄 POST `/api/v1/auth/login`
+
+**Description:**  
+Log in using email and password.
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "password": "Password@123"
+}
+```
+**Response:**  
+Returns a new unser.Set access token and refresh token (usually in cookies).
+
 ---
 
-## 🚀 Live Demo
+### 🔄 POST `/api/v1/auth/refresh-token`
 
-Check out the live backend deployed on Vercel:  
-🔗 [https://user-auth-beckend.vercel.app](https://user-auth-beckend.vercel.app)
+**Description:**  
+Get a new access token using a refresh token.
+
+**Response:**  
+Returns a new access token.
 
 ---
 
+### 🔄 GET `/api/v1/auth/google`
 
+**Description:**  
+Redirects the user to Google OAuth consent screen.
 
-## ⚙️ Tech Stack
+**Query Parameters:**
+- `redirect` _(optional)_: URL to redirect after successful login.
 
-| Tech         | Description                    |
-|--------------|--------------------------------|
-| Node.js      | Backend runtime                |
-| Express.js   | Web framework                  |
-| TypeScript   | Static typing                  |
-| MongoDB      | NoSQL database                 |
-| Mongoose     | ODM for MongoDB                |
-| Zod          | Schema validation              |
-| JWT          | Authentication system          |
-| Passport.js  | Google OAuth integration       |
-| Multer       | File upload                    |
-| Cloudinary   | Image hosting                  |
-| Redis        | Caching (OTP/session)  |
-| Nodemailer   | Sending email OTP              |
+---
 
+### 🔄 GET `/api/v1/auth/google/callback`
 
+**Description:**  
+Callback route for Google OAuth.
 
-## 📁 Project Structure
+**Note:**  
+On failure, it redirects to the frontend login page.
 
-```
-ssrc/
-├── app.ts                  # App initialization
-├── server.ts               # Server bootstrap
-├── app/
-│   ├── config/             # Configuration files (env, multer, passport, etc.)
-│   │   ├── cloudinary.config.ts
-│   │   ├── env.ts
-│   │   ├── multer.config.ts
-│   │   ├── passport.ts
-│   │   └── redis.config.ts
-│   │
-│   ├── errorHelpers/       # Centralized error handling utilities
-│   │   ├── AppError.ts
-│   │   ├── handleCastError.ts
-│   │   ├── handleDuplicateError.ts
-│   │   ├── handleValidationError.ts
-│   │   └── handleZodError.ts
-│   │
-│   ├── interfaces/         # Global TypeScript interface declarations
-│   │   ├── error.types.ts
-│   │   └── index.d.ts
-│   │
-│   ├── middlewares/        # Express middlewares
-│   │   ├── checkAuth.ts
-│   │   ├── globalErrorHandler.ts
-│   │   └── validateRequest.ts
-│   │
-│   ├── modules/            # Domain-specific business logic
-│   │   ├── auth/           # Login, register, Google OAuth
-│   │   │   ├── auth.controller.ts
-│   │   │   ├── auth.route.ts
-│   │   │   ├── auth.service.ts
-│   │   │   └── auth.validation.ts
-│   │   │
-│   │   ├── otp/            # Email-based OTP verification system
-│   │   │   ├── otp.controller.ts
-│   │   │   ├── otp.route.ts
-│   │   │   ├── otp.service.ts
-│   │   │   └── otpValidation.ts
-│   │   │
-│   │   └── user/           # User profile, role, CRUD
-│   │       ├── user.controller.ts
-│   │       ├── user.interface.ts
-│   │       ├── user.model.ts
-│   │       ├── user.route.ts
-│   │       ├── user.service.ts
-│   │       └── user.validation.ts
-│   │
-│   ├── routes/             # Combines all route modules
-│   │   └── index.ts
-│   │
-│   └── utils/              # Helper utilities and services
-│       ├── catchAsync.ts
-│       ├── createUsersToken.ts
-│       ├── generateOtp.ts
-│       ├── invoice.ts
-│       ├── jwt.ts
-│       ├── seedSuperAdmin.ts  # Seed a default Super Admin user
-│       ├── sendMail.ts
-│       ├── sendResponse.ts
-│       └── setAuthCookie.ts
-│       └── ejsTemplate/    # Email HTML templates
-│           ├── forgetPassword.ejs
-│           └── otp.ejs
+---
 
+### 🛡️ POST `/api/v1/auth/change-password`
+
+**Access:**  
+Authenticated (`USER`, `AGENT`, `ADMIN`)
+
+**Request Body:**
+```json
+{
+  "oldPassword": "OldPass@123",
+  "newPassword": "NewPass@456"
+}
 ```
 
-## ⚙️ Environment Variables (.env)
-```
-DB_URL=mongodb+srv://<DB_User>:<DB_Pass>@cluster0.tbsccmb.mongodb.net/<DB_Name>?retryWrites=true&w=majority&appName=Cluster0
-PORT=5000
-NODE_ENV="development"
+**Description:**  
+Change the current user's password.
 
-BCRYPT_SALT=<bcrypt_salt_number>
+---
 
-#express_session_secret
-EXPRESS_SESSION_SECRET=<express_session_secret>
+### 🔑 POST `/api/v1/auth/set-password`
 
-# accessToken
-JWT_ACCESS_TOKEN_SECRET=<secret_token>
-JWT_ACCESS_TOKEN_EXPIRESIN=<token_expire_time>
+**Use Case:**  
+Used for users who signed in with Google but want to set a local password.
 
-# REFRESHToken
-JWT_REFRESH_TOKEN_SECRET=<secret_token>
-JWT_REFRESH_TOKEN_EXPIRESIN=<token_expire_time>
+**Access:**  
+Authenticated
 
-#Google
-GOOGLE_CLIENT_SECRET=<google_client_secret>
-GOOGLE_CLIENT_ID=<client_id>
-GOOGLE_CALLBACK_URL=<callback_url>
-# Front end url
-FRONT_END_URL=<front_end_url>
-
-#SMTP 
-SMTP_HOST=smtp.gmail.com
-SMTP_USER=<smtp_user_mail>
-SMTP_PORT=<smtp_port>
-SMTP_PASS=<app_pass>
-SMTP_FROM=<smtp_user_mail>
-
-#cloudinary
-CLOUDINARY_API_KEY=<cloudinary_api_key>
-CLOUDINARY_CLOUD_NAME=<cloudinary_cloud_name>
-CLOUDINARY_SECRET_KEY=<cloudinary_secret_key>
-
-#Redis
-REDIS_USERNAME=default
-REDIS_PASSWORD=<redis_pass>
-REDIS_HOST=<redis_host>
-REDIS_PORT=<redis_port>
-
+**Request Body:**
+```json
+{
+  "plainPassword": "MyNewLocalPassword@123"
+}
 ```
 
-## 🔐API Documentation
+---
 
-### Base URL
-```
-https://user-auth-beckend.vercel.app/api/v1  (live)
-https://localhost:5000/api/v1  (local)
+### 🔐 POST `/api/v1/auth/logout`
 
+**Description:**  
+Logs the user out by clearing refresh tokens or relevant sessions.
 
-```
-### Auth Routes (/auth)
+---
 
-| Method | Endpoint                | Description                                   | Auth Required | Request Body / Query Parameters                  |
-| ------ | ----------------------- | --------------------------------------------- | ------------- | ------------------------------------------------ |
-| POST   | `/auth/login`           | User login with email and password            | No❌            | JSON body: `{ email: string, password: string }` |
-| POST   | `/auth/refresh-token`   | Get new access token using refresh token      | No❌           | (Uses cookie)                                    |
-| GET    | `/auth/google`          | Initiate Google OAuth login                   | No❌           | Query param: `redirect` (optional)               |
-| GET    | `/auth/google/callback` | Google OAuth callback                         | No❌           | -                                                |
-| POST   | `/auth/change-password` | Change password                               | Yes✅           | JSON body with validation                        |
-| POST   | `/auth/set-password`    | Set new password (for users without password) | Yes           | JSON body with validation                        |
-| POST   | `/auth/logout`          | Logout user                                   | No❌            | -                                                |
-| POST   | `/auth/forget-password` | Request password reset OTP email              | No❌            | JSON body with email                             |
-| POST   | `/auth/reset-password`  | Reset password with OTP                       | Yes✅           | JSON body with OTP and new password              |
-          
+### 📩 POST `/api/v1/auth/forget-password`
 
-### User Routes (/user)
+**Description:**  
+Sends a password reset OTP to the registered email.
 
-| Method | Endpoint          | Description                           | Auth Required                             | Request Body / Notes                                                |
-| ------ | ----------------- | ------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------- |
-| POST   | `/user/create`    | Create a new user                     | No❌                                        | Multipart form data (`file` for upload), plus validated user data   |
-| GET    | `/user/all-users` | Get list of all users                 | Yes✅, Roles: ADMIN, SUPER\_ADMIN           | -                                                                   |
-| GET    | `/user/get-me`    | Get profile of current logged-in user | Yes✅, Roles: any (user, admin, superadmin) | -                                                                   |
-| GET    | `/user/:id`       | Get a single user by ID               | Yes✅, Roles: ADMIN, SUPER\_ADMIN           | URL param: user ID                                                  |
-| PATCH  | `/user/:id`       | Update user data                      | Yes✅, Roles: any                           | Multipart form data (`file` for upload), plus validated update data |
-
-### OTP Routes (/otp)
-| Method | Endpoint      | Description                  | Auth Required |
-| ------ | ------------- | ---------------------------- | ------------- |
-| POST   | `/otp/send`   | Send OTP to user email/phone | No❌           |
-| POST   | `/otp/verify` | Verify OTP                   | No❌            |
-
-
-
-### 🚀Notes:
-- Auth Required means the route is protected by **checkAuth** middleware which checks JWT token and user roles.
-
-- **Validation** is done using Zod schemas (e.g., loginShema, changePasswordShema, etc.) before controller logic.
-
-- File uploads handled using **Multer middleware** (multerUpload.single("file")) on relevant routes.
-
-- **Google OAuth** login uses **Passport.js** with routes /auth/google and /auth/google/callback.
-
-- **Refresh** token is handled via cookie on /auth/refresh-token.
-
-- **Role-based** access uses enum Role with values like ADMIN, SUPER_ADMIN, and USER.
-
-## 🔌 Postma collection
-
-📬 You can explore the full API using the Postman collection below:
-
-👉 [Postman Collection Link](https://jonydas.postman.co/workspace/jony-das's-Workspace~ba583e4b-416b-40d4-8462-1752c44cad0a/request/43952441-ac79ad7e-0345-4ab7-9273-3fe8169ddba5?action=share&creator=43952441&ctx=documentation)
-
-📦 Base URL: `http://localhost:5000/api/v1`
-
-🛠 Features Covered:
-- ✅ User Registration & Management
-- ✅ Email OTP System
-- ✅ Authentication (Login, Logout, Google Auth)
-- ✅ Password Change / Reset
-
-## 🚀 Local Setup Instructions
-### 1️⃣ Clone the Repository
-```
-git clone https://github.com/yourusername/user_auth_backend.git
-cd user_auth_backend
+**Request Body:**
+```json
+{
+  "email": "user@example.com"
+}
 ```
 
-### 2️⃣ Install Dependencies
+---
+
+### 🔄 POST `/api/v1/auth/reset-password`
+
+**Access:**  
+Authenticated (after OTP verification)
+
+**Request Body:**
+```json
+{
+    "id":"68833e18716062f268c26480",
+    "newPassword":"newPassword123"
+}
 ```
+
+**Description:**  
+Reset password after verifying OTP.
+        |
+
+
+# 🔐 OTP API Endpoints
+
+These routes handle email-based OTP sending and verification for sensitive actions like password reset.
+
+
+### 📩 POST `/api/v1/otp/send`
+
+**Description:**  
+Send an OTP to the user’s email for verification.
+
+**Request Body:**
+```json
+{
+   "name":"user name",
+  "email": "user@example.com"
+}
+```
+
+**Response:**  
+Returns a success message if the OTP was sent.
+
+---
+
+### ✅ POST `/api/v1/otp/verify`
+
+**Description:**  
+Verify the OTP sent to the user's email.
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "otp": "123456"
+}
+```
+
+**Response:**  
+Returns a success message if OTP is correct and valid.
+         |
+
+
+
+# Wallet API Documentation
+
+
+
+
+### ✅ GET `/api/v1/wallet/me`
+
+**Description:**  
+Get the wallet details of the currently authenticated user or agent.
+
+**Authorization:**  
+Required — Roles: USER, AGENT
+
+**Response:**  
+Returns wallet object for the logged-in user or agent.
+
+---
+✅ **GET** `/api/v1/wallet/all-wallet`
+
+**Description:**  
+Get all wallets in the system.
+
+
+**Authorization:**  
+Required — Roles: `ADMIN`, `SUPER_ADMIN`
+
+---
+✅ **PATCH** `/api/v1/wallet/block/:id`
+
+**Description:**  
+Block a wallet by ID to prevent any further transactions.
+
+
+**Authorization:**  
+Required — Roles: `ADMIN`, `SUPER_ADMIN`
+
+
+**Response:**  
+Success message and the updated wallet object.
+
+
+**Response:**  
+Array of wallet objects.
+
+---
+✅ **PATCH** `/api/v1/wallet/unblock/:id`
+
+**Description:**  
+Unblock a wallet by ID to allow transactions again.
+
+
+**Authorization:**  
+Required — Roles: `ADMIN`, `SUPER_ADMIN`
+
+
+**Response:**  
+Success message and the updated wallet object.
+
+---
+# Transaction API Documentation
+
+
+### ✅ POST `/api/v1/transaction/topup`
+
+**Description:**  
+Top up money to the user's wallet.
+
+**Authorization:**  
+Required — Roles: USER, AGENT
+
+**Request Body:**
+```
+{
+  "amount": 1000
+}
+```
+**Response:**
+```
+{
+  "message": "Transaction successfull",
+  "transaction": {
+    "transferType::"TOPUP"
+
+   ....
+  }
+}
+
+```
+---
+✅ **POST** `/api/v1/transaction/send-money`
+
+**Description:**  
+Send money to another user's wallet.
+
+
+**Authorization:**  
+Required — Role: `USER`
+
+
+**Request Body:**
+
+```
+{
+  "amount": 200,
+  "receiverWalletId": "64d1a2b3c4d5e6f7g8h9i0j1"
+}
+```
+**Response:**
+```
+{
+  "message": "Transaction successfull",
+  "transaction": {
+    "transferType::"SENDMONEY"
+   ....
+  }
+}
+
+```
+---
+✅ **POST** `/api/v1/transaction/withdraw`
+
+**Description:**  
+Withdraw money from the user's wallet.
+
+
+**Authorization:**  
+Required — Roles: `USER`, `AGENT`
+
+
+**Request Body:**
+
+```
+{
+  "amount": 500
+}
+```
+**Response:**
+```
+{
+  "message": "Transaction successfull",
+  "transaction": {
+    "transferType::"WITHDRAW"
+   ....
+  }
+}
+
+```
+---
+### ✅ **POST** `/api/v1/transaction/cashIn`
+
+**Description:**  
+Agent receives cash from a user and deposits it into their wallet.
+
+**Authorization:**  
+Required — Role: `AGENT`
+
+
+**Request Body:**
+```
+{
+  "amount": 300,
+  "receiverWalletId": "64d1a2b3c4d5e6f7g8h9i0j1"
+}
+```
+**Response:**
+```
+{
+  "message": "Transaction successfull",
+  "transaction": {
+    "transferType::"CASHIN"
+   ....
+  }
+}
+
+```
+
+---
+✅ **POST** `/api/v1/transaction/cashOut`
+
+**Description:**  
+User requests cash out through an agent.
+
+---
+
+**Authorization:**  
+Required — Role: `USER`
+
+---
+
+**Request Body:**
+
+```
+{
+  "amount": 400,
+  "receiverWalletId": "64d3a4b5c6d7e8f9g0h1i2j3"
+}
+```
+**Response:**
+```
+{
+  "message": "Transaction successfull",
+  "transaction": {
+    "transferType::"CASHOUT"
+   ....
+  }
+}
+
+```
+---
+✅ **GET** `/api/v1/transaction/history`
+
+**Description:**  
+Get transaction history for the logged-in user or agent.
+
+
+
+**Authorization:**  
+Required — Roles: `USER`, `AGENT`
+
+
+**Response:**  
+Array of transaction objects related to the authenticated user or agent.
+
+---
+✅ **GET** `/api/v1/transaction/all-transaction`
+
+**Description:**  
+Get all transactions in the system (admin panel).
+
+
+**Authorization:**  
+Required — Roles: `ADMIN`, `SUPER_ADMIN`
+
+
+
+**Response:**  
+Array of all transaction objects in the system.
+
+---
+
+## 📫 API Testing
+
+You can test the API using the provided Postman collection:
+
+- 📦 **Postman Collection**: [Download Collection](./postman-collection.json)
+- 🌐 **Base URL**: `https://digital-wallet-beckend.vercel.app`
+
+## 🛠 Setup Instructions
+
+```bash
+# Clone the repo
+git clone https://github.com/yourusername/digital_wallet_backend.git
+cd digital_wallet_backend
+
+# Install dependencies
 npm install
-# or
-yarn install
-```
 
-### 3️⃣ Set up Environment Variables
-Create a ```.env``` file in the root directory and paste the environment variables from the example above.
+# Environment setup
+cp .env.example .env
+# Fill in Mongo URI, JWT secrets, Redis, Mail config
 
-### 4️⃣ Run the Development Server
-```
+# Run the app
 npm run dev
 ```
 
+---
 
+## ✅ Environment Variables (`.env`)
 
+```env
+# .env.example
 
+# Application
+PORT=5000
+NODE_ENV=development
 
-```bash
-git clone https://github.com/yourusername/user_auth_backend.git
-cd user_auth_backend
+# MongoDB
+DB_URL=mongodb+srv://<username>:<password>@<cluster-url>/<database>?retryWrites=true&w=majority
 
+# Super Admin
+SUPER_ADMIN_EMAIL=your_super_admin_email@example.com
+SUPER_ADMIN_PASSWORD=your_super_admin_password
 
+# Bcrypt
+BCRYPT_SALT=10
+
+# Session Secret
+EXPRESS_SESSION_SECRET=your_express_session_secret
+
+# JWT Configuration
+JWT_ACCESS_TOKEN_SECRET=your_access_token_secret
+JWT_ACCESS_TOKEN_EXPIRESIN=1d
+
+JWT_REFRESH_TOKEN_SECRET=your_refresh_token_secret
+JWT_REFRESH_TOKEN_EXPIRESIN=7d
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:5000/api/v1/auth/google/callback
+
+# Frontend URL
+FRONT_END_URL=http://localhost:5173
+
+# SMTP (Email)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=your_email@example.com
+SMTP_PASS=your_smtp_password
+SMTP_FROM=your_email@example.com
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_SECRET_KEY=your_cloudinary_api_secret
+
+# Redis
+REDIS_HOST=your_redis_host
+REDIS_PORT=your_redis_port
+REDIS_USERNAME=your_redis_username
+REDIS_PASSWORD=your_redis_password
+
+```
