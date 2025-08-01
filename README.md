@@ -629,7 +629,7 @@ Array of all transaction objects in the system.
 
 You can test the API using the provided Postman collection:
 
-- 📦 **Postman Collection**: [Download Collection](digital_wallet.postman_collection.json)
+- 📦 **Postman Collection**: [Download Collection](postman_collection.json)
 - 🌐 **Live Base URL**: `https://digital-wallet-beckend.vercel.app`
 
 
