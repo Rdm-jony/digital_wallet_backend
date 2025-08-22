@@ -20,24 +20,26 @@ passport.use(
             if (!isUserExist) {
                 return done("User does not exist")
             }
-            if (!isUserExist.isVerified) {
-                throw new AppError(httpStatusCode.BAD_REQUEST, "User is not verified")
-
-            }
-
-            if (isUserExist.isBlocked || isUserExist.agentRequest == AgentStatus.SUSPENDED) {
-                throw new AppError(httpStatusCode.BAD_REQUEST, `User is blocked or suspended`)
-
-            }
-
-            if (isUserExist.isDeleted) {
-                throw new AppError(httpStatusCode.BAD_REQUEST, "User is deleted")
-
-            }
             const isPasswordCorrect = await brcypt.compare(password, isUserExist.password as string);
             if (!isPasswordCorrect) {
                 return done("Invalid email or password.");
             }
+
+            if (!isUserExist.isVerified) {
+                return done("User is not verified")
+
+            }
+
+            if (isUserExist.isBlocked || isUserExist.agentRequest == AgentStatus.SUSPENDED) {
+                return done(`User is blocked or suspended`)
+
+            }
+
+            if (isUserExist.isDeleted) {
+                return done("User is deleted")
+
+            }
+
             const user = isUserExist.toObject()
             delete user.password
 

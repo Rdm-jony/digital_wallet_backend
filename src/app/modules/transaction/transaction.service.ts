@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { JwtPayload } from "jsonwebtoken";
 import { ITransaction, PaymentStatus, TransferType } from "./transaction.interface";
 import { Wallet } from "../wallet/wallet.model";
@@ -8,24 +9,47 @@ import { User } from "../user/user.model";
 import { Transaction } from "./transaction.model";
 import mongoose from "mongoose";
 import { getValidateWallet } from "../../utils/getValidateWallet";
+import { SSLService } from "../sslCommerze/sslCommerze.service";
+import { ISSLCommerz } from "../sslCommerze/sslCommerze.interface";
 
-
+const getTransactionId = () => {
+    return `tran_${Date.now()}_${Math.random() * 1000}`
+}
 const transactionTopup = async (decodedToken: JwtPayload, payload: Partial<ITransaction>) => {
     const existReceiverWallet = await getValidateWallet(decodedToken.userId, "your")
-    existReceiverWallet.balance += payload.amount as number
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        await existReceiverWallet.save({ session })
-        const [newTransaction] = await Transaction.create([{
+       const [newTransaction]= await Transaction.create([{
             ...payload,
             receiverWallet: existReceiverWallet._id,
             transferType: TransferType.TOPUP,
-            status: PaymentStatus.SUCCESS
+            ssl_tran_id: getTransactionId(),
+            status: PaymentStatus.PENDING
         }], { session });
+
+        const userAddress = (existReceiverWallet?.user as any).address
+        const userEmail = (existReceiverWallet?.user as any).email
+        const userPhoneNumber = (existReceiverWallet?.user as any).phone
+        const userName = (existReceiverWallet?.user as any).name
+
+        const sslPayload: ISSLCommerz = {
+            walletId:existReceiverWallet._id,
+            address: userAddress,
+            email: userEmail,
+            phone: userPhoneNumber,
+            name: userName,
+            amount: payload?.amount as number,
+            transactionId: newTransaction.ssl_tran_id as string
+        }
+        const response = await SSLService.sslPaymentInit(sslPayload)
+
         await session.commitTransaction()
         session.endSession()
-        return newTransaction
+        return {
+            paymentURL: response.GatewayPageURL,
+
+        }
     } catch (error) {
         await session.abortTransaction()
         session.endSession()

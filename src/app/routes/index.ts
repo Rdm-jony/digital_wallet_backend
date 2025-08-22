@@ -4,28 +4,33 @@ import { authRoutes } from "../modules/auth/auth.route";
 import { otpRoutes } from "../modules/otp/otp.route";
 import { transactionRoutes } from "../modules/transaction/transaction.route";
 import { walletRoutes } from "../modules/wallet/wallet.route";
-export const router=Router()
-const moduleRoutes=[
+import { sslRoutes } from "../modules/sslCommerze/ssl.route";
+export const router = Router()
+const moduleRoutes = [
     {
-        path:"/user",
-        route:userRoutes
+        path: "/user",
+        route: userRoutes
     },
     {
-        path:"/auth",
-        route:authRoutes
+        path: "/auth",
+        route: authRoutes
     },
     {
-        path:"/otp",
-        route:otpRoutes
+        path: "/otp",
+        route: otpRoutes
     },
     {
-        path:"/transaction",
-        route:transactionRoutes
+        path: "/transaction",
+        route: transactionRoutes
     },
     {
-        path:"/wallet",
-        route:walletRoutes
+        path: "/wallet",
+        route: walletRoutes
+    },
+    {
+        path: "/ssl",
+        route: sslRoutes
     }
 ]
 
-moduleRoutes.forEach(route=>router.use(route.path,route.route))
+moduleRoutes.forEach(route => router.use(route.path, route.route))

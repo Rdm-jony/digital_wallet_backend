@@ -11,7 +11,7 @@ const transactionTopup = (catchAsync(async (req: Request, res: Response) => {
 
     sendResponse(res, {
         data: newTransaction,
-        message: "Transaction successfull",
+        message: "Transaction init",
         statusCode: httpStatusCode.CREATED,
         success: true
     })

@@ -9,7 +9,7 @@ import { AgentStatus } from "../modules/user/user.interface"
 
 export const checkAuth = (...authRoles: string[]) => async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const token = req.headers.authorization
+        const token =req.cookies.accessToken || req.headers.authorization 
         if (!token) {
             throw new AppError(403, "No Token Recieved")
         }

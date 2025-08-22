@@ -9,7 +9,7 @@ import { sendMail } from "../../utils/sendMail"
 
 const otpExpireTime = 2 * 60
 
-const sendOtp = async (payload: { email: string, name: string }) => {
+const sendOtp = async (payload: { email: string}) => {
     const user = await User.findOne({ email: payload.email })
     if (!user) {
         throw new AppError(httpStatusCode.NOT_FOUND, "user not found!")

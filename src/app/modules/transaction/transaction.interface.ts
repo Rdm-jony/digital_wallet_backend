@@ -11,6 +11,7 @@ export enum TransferType {
 export enum PaymentStatus{
     PENDING="PENDING",
     SUCCESS="SUCCESS",
+    CANCELED="CANCELED",
     FAILED="FAILED"
 }
 
@@ -18,6 +19,7 @@ export interface ITransaction {
     transferType:TransferType,
     senderWallet :Types.ObjectId | null,
     receiverWallet:Types.ObjectId | null,
+    ssl_tran_id?:string,
     amount:number,
     status:PaymentStatus,
 }
