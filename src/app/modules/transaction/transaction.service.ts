@@ -89,6 +89,7 @@ const transactionSendMoney = async (decodedToken: JwtPayload, payload: Partial<I
     if (!payload?.receiverWallet) {
         throw new AppError(httpStatusCode.BAD_REQUEST, "Receiver wallet is required");
     }
+    console.log(payload)
     const existReceiverWallet = await getValidateWallet(payload?.receiverWallet, "receiver")
     const existSendarWallet = await getValidateWallet(decodedToken.userId, "your")
 
