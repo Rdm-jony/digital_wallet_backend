@@ -13,5 +13,6 @@ var PaymentStatus;
 (function (PaymentStatus) {
     PaymentStatus["PENDING"] = "PENDING";
     PaymentStatus["SUCCESS"] = "SUCCESS";
+    PaymentStatus["CANCELED"] = "CANCELED";
     PaymentStatus["FAILED"] = "FAILED";
 })(PaymentStatus || (exports.PaymentStatus = PaymentStatus = {}));

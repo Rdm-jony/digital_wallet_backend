@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.sslRoutes = void 0;
+const express_1 = require("express");
+const ssl_controller_1 = require("./ssl.controller");
+const router = (0, express_1.Router)();
+router.post("/success", ssl_controller_1.SSLController.sslSuccess);
+router.post("/fail", ssl_controller_1.SSLController.sslFail);
+router.post("/cancel", ssl_controller_1.SSLController.sslCancel);
+exports.sslRoutes = router;

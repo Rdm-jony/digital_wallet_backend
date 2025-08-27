@@ -19,10 +19,10 @@ const http_status_codes_1 = __importDefault(require("http-status-codes"));
 const getValidateWallet = (userId, label) => __awaiter(void 0, void 0, void 0, function* () {
     let wallet;
     if (label == "your") {
-        wallet = yield wallet_model_1.Wallet.findOne({ user: userId });
+        wallet = yield wallet_model_1.Wallet.findOne({ user: userId }).populate("user");
     }
     else if (label == "receiver") {
-        wallet = yield wallet_model_1.Wallet.findById(userId);
+        wallet = yield wallet_model_1.Wallet.findById(userId).populate("user");
     }
     if (!wallet) {
         throw new AppError_1.default(http_status_codes_1.default.NOT_FOUND, `${label} wallet not found.`);

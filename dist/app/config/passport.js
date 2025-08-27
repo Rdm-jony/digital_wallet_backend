@@ -32,18 +32,18 @@ passport_1.default.use(new passport_local_1.Strategy({
         if (!isUserExist) {
             return done("User does not exist");
         }
-        if (!isUserExist.isVerified) {
-            throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "User is not verified");
-        }
-        if (isUserExist.isBlocked || isUserExist.agentRequest == user_interface_1.AgentStatus.SUSPENDED) {
-            throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, `User is blocked or suspended`);
-        }
-        if (isUserExist.isDeleted) {
-            throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "User is deleted");
-        }
         const isPasswordCorrect = yield bcryptjs_1.default.compare(password, isUserExist.password);
         if (!isPasswordCorrect) {
             return done("Invalid email or password.");
+        }
+        if (!isUserExist.isVerified) {
+            return done("User is not verified");
+        }
+        if (isUserExist.isBlocked || isUserExist.agentRequest == user_interface_1.AgentStatus.SUSPENDED) {
+            return done(`User is blocked or suspended`);
+        }
+        if (isUserExist.isDeleted) {
+            return done("User is deleted");
         }
         const user = isUserExist.toObject();
         delete user.password;

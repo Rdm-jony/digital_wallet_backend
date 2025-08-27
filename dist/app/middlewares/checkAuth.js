@@ -21,7 +21,7 @@ const http_status_codes_1 = __importDefault(require("http-status-codes"));
 const user_interface_1 = require("../modules/user/user.interface");
 const checkAuth = (...authRoles) => (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const token = req.headers.authorization;
+        const token = req.cookies.accessToken || req.headers.authorization;
         if (!token) {
             throw new AppError_1.default(403, "No Token Recieved");
         }

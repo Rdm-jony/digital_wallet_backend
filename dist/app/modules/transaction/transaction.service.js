@@ -22,17 +22,36 @@ const user_model_1 = require("../user/user.model");
 const transaction_model_1 = require("./transaction.model");
 const mongoose_1 = __importDefault(require("mongoose"));
 const getValidateWallet_1 = require("../../utils/getValidateWallet");
+const sslCommerze_service_1 = require("../sslCommerze/sslCommerze.service");
+const queryBuilder_1 = require("../../utils/queryBuilder");
+const getTransactionId = () => {
+    return `tran_${Date.now()}_${Math.random() * 1000}`;
+};
 const transactionTopup = (decodedToken, payload) => __awaiter(void 0, void 0, void 0, function* () {
     const existReceiverWallet = yield (0, getValidateWallet_1.getValidateWallet)(decodedToken.userId, "your");
-    existReceiverWallet.balance += payload.amount;
     const session = yield mongoose_1.default.startSession();
     session.startTransaction();
     try {
-        yield existReceiverWallet.save({ session });
-        const [newTransaction] = yield transaction_model_1.Transaction.create([Object.assign(Object.assign({}, payload), { receiverWallet: existReceiverWallet._id, transferType: transaction_interface_1.TransferType.TOPUP, status: transaction_interface_1.PaymentStatus.SUCCESS })], { session });
+        const [newTransaction] = yield transaction_model_1.Transaction.create([Object.assign(Object.assign({}, payload), { receiverWallet: existReceiverWallet._id, transferType: transaction_interface_1.TransferType.TOPUP, ssl_tran_id: getTransactionId(), status: transaction_interface_1.PaymentStatus.PENDING })], { session });
+        const userAddress = (existReceiverWallet === null || existReceiverWallet === void 0 ? void 0 : existReceiverWallet.user).address;
+        const userEmail = (existReceiverWallet === null || existReceiverWallet === void 0 ? void 0 : existReceiverWallet.user).email;
+        const userPhoneNumber = (existReceiverWallet === null || existReceiverWallet === void 0 ? void 0 : existReceiverWallet.user).phone;
+        const userName = (existReceiverWallet === null || existReceiverWallet === void 0 ? void 0 : existReceiverWallet.user).name;
+        const sslPayload = {
+            walletId: existReceiverWallet._id,
+            address: userAddress,
+            email: userEmail,
+            phone: userPhoneNumber,
+            name: userName,
+            amount: payload === null || payload === void 0 ? void 0 : payload.amount,
+            transactionId: newTransaction.ssl_tran_id
+        };
+        const response = yield sslCommerze_service_1.SSLService.sslPaymentInit(sslPayload);
         yield session.commitTransaction();
         session.endSession();
-        return newTransaction;
+        return {
+            paymentURL: response.GatewayPageURL,
+        };
     }
     catch (error) {
         yield session.abortTransaction();
@@ -157,14 +176,23 @@ const transactionCashout = (decodedToken, payload) => __awaiter(void 0, void 0, 
         throw error;
     }
 });
-const getTransactionHistory = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+const getTransactionHistory = (query, userId) => __awaiter(void 0, void 0, void 0, function* () {
     const isWalletExist = yield wallet_model_1.Wallet.findOne({ user: userId });
     if (!isWalletExist) {
         throw new AppError_1.default(http_status_codes_1.default.NOT_FOUND, "wallet not found");
     }
-    return yield transaction_model_1.Transaction.find({
-        $or: [{ senderWallet: isWalletExist }, { receiverWallet: isWalletExist }]
-    });
+    const queryBuilder = new queryBuilder_1.QueryBuilder(transaction_model_1.Transaction.find({ $or: [{ senderWallet: isWalletExist._id }, { receiverWallet: isWalletExist._id }] }), query, userId);
+    const transaction = queryBuilder
+        // .search(transactionSearchableFields)
+        .filter()
+        .sort()
+        .fields()
+        .paginate();
+    const data = yield transaction.build();
+    // const [data, meta] = await Promise.all([
+    //     queryBuilder.getMeta()
+    // ])
+    return data;
 });
 const getAllTransaction = () => __awaiter(void 0, void 0, void 0, function* () {
     const allTransaction = yield transaction_model_1.Transaction.find({});

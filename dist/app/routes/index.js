@@ -7,6 +7,8 @@ const auth_route_1 = require("../modules/auth/auth.route");
 const otp_route_1 = require("../modules/otp/otp.route");
 const transaction_route_1 = require("../modules/transaction/transaction.route");
 const wallet_route_1 = require("../modules/wallet/wallet.route");
+const ssl_route_1 = require("../modules/sslCommerze/ssl.route");
+const stat_route_1 = require("../modules/stat/stat.route");
 exports.router = (0, express_1.Router)();
 const moduleRoutes = [
     {
@@ -28,6 +30,13 @@ const moduleRoutes = [
     {
         path: "/wallet",
         route: wallet_route_1.walletRoutes
+    },
+    {
+        path: "/ssl",
+        route: ssl_route_1.sslRoutes
+    }, {
+        path: "/stat",
+        route: stat_route_1.statRoutes
     }
 ];
 moduleRoutes.forEach(route => exports.router.use(route.path, route.route));

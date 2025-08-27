@@ -7,6 +7,7 @@ const transactionSchema = new mongoose_1.Schema({
     transferType: { type: String, enum: Object.values(transaction_interface_1.TransferType) },
     status: { type: String, enum: Object.values(transaction_interface_1.PaymentStatus), default: transaction_interface_1.PaymentStatus.PENDING },
     amount: { type: Number, min: [1, "Balance must greate than 0"] },
+    ssl_tran_id: { type: String },
     senderWallet: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: "Wallet"

@@ -17,7 +17,7 @@ const AppError_1 = __importDefault(require("../../errorHelpers/AppError"));
 const wallet_model_1 = require("./wallet.model");
 const http_status_codes_1 = __importDefault(require("http-status-codes"));
 const getWallet = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const isWalletExist = yield wallet_model_1.Wallet.findOne({ user: userId });
+    const isWalletExist = yield wallet_model_1.Wallet.findOne({ user: userId }).populate("user");
     if (!isWalletExist) {
         throw new AppError_1.default(http_status_codes_1.default.NOT_FOUND, "no wallet found");
     }
@@ -49,7 +49,7 @@ const unblockWallet = (walletId) => __awaiter(void 0, void 0, void 0, function* 
     yield isWalletExist.save();
 });
 const getAllWallet = () => __awaiter(void 0, void 0, void 0, function* () {
-    const allWallet = yield wallet_model_1.Wallet.find({});
+    const allWallet = yield wallet_model_1.Wallet.find({}).populate("user");
     return allWallet;
 });
 exports.walletService = {

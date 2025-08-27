@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.verfyOtpSchema = exports.sendOtpSchema = void 0;
 const zod_1 = __importDefault(require("zod"));
 exports.sendOtpSchema = zod_1.default.object({
-    name: zod_1.default.string().nonempty("required"),
     email: zod_1.default.email().nonempty("required")
 });
 exports.verfyOtpSchema = zod_1.default.object({

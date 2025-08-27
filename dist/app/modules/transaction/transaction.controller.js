@@ -22,7 +22,7 @@ const transactionTopup = ((0, catchAsync_1.catchAsync)((req, res) => __awaiter(v
     const newTransaction = yield transaction_service_1.transactionService.transactionTopup(decodedToken, req.body);
     (0, sendResponse_1.sendResponse)(res, {
         data: newTransaction,
-        message: "Transaction successfull",
+        message: "Transaction init",
         statusCode: http_status_codes_1.default.CREATED,
         success: true
     });
@@ -70,7 +70,8 @@ const transactionCashout = ((0, catchAsync_1.catchAsync)((req, res) => __awaiter
 })));
 const getTransactionHistory = ((0, catchAsync_1.catchAsync)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const decodedToken = req.user;
-    const transactionHistory = yield transaction_service_1.transactionService.getTransactionHistory(decodedToken.userId);
+    const query = req.query;
+    const transactionHistory = yield transaction_service_1.transactionService.getTransactionHistory(query, decodedToken.userId);
     (0, sendResponse_1.sendResponse)(res, {
         data: transactionHistory,
         message: "Transaction history retrieved successfull",
