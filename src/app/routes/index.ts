@@ -5,6 +5,7 @@ import { otpRoutes } from "../modules/otp/otp.route";
 import { transactionRoutes } from "../modules/transaction/transaction.route";
 import { walletRoutes } from "../modules/wallet/wallet.route";
 import { sslRoutes } from "../modules/sslCommerze/ssl.route";
+import { statRoutes } from "../modules/stat/stat.route";
 export const router = Router()
 const moduleRoutes = [
     {
@@ -30,6 +31,9 @@ const moduleRoutes = [
     {
         path: "/ssl",
         route: sslRoutes
+    },{
+        path:"/stat",
+        route:statRoutes
     }
 ]
 

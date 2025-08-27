@@ -11,6 +11,7 @@ import mongoose from "mongoose";
 import { getValidateWallet } from "../../utils/getValidateWallet";
 import { SSLService } from "../sslCommerze/sslCommerze.service";
 import { ISSLCommerz } from "../sslCommerze/sslCommerze.interface";
+import { QueryBuilder } from "../../utils/queryBuilder";
 
 const getTransactionId = () => {
     return `tran_${Date.now()}_${Math.random() * 1000}`
@@ -20,7 +21,7 @@ const transactionTopup = async (decodedToken: JwtPayload, payload: Partial<ITran
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-       const [newTransaction]= await Transaction.create([{
+        const [newTransaction] = await Transaction.create([{
             ...payload,
             receiverWallet: existReceiverWallet._id,
             transferType: TransferType.TOPUP,
@@ -34,7 +35,7 @@ const transactionTopup = async (decodedToken: JwtPayload, payload: Partial<ITran
         const userName = (existReceiverWallet?.user as any).name
 
         const sslPayload: ISSLCommerz = {
-            walletId:existReceiverWallet._id,
+            walletId: existReceiverWallet._id,
             address: userAddress,
             email: userEmail,
             phone: userPhoneNumber,
@@ -89,7 +90,7 @@ const transactionSendMoney = async (decodedToken: JwtPayload, payload: Partial<I
     if (!payload?.receiverWallet) {
         throw new AppError(httpStatusCode.BAD_REQUEST, "Receiver wallet is required");
     }
-    console.log(payload)
+
     const existReceiverWallet = await getValidateWallet(payload?.receiverWallet, "receiver")
     const existSendarWallet = await getValidateWallet(decodedToken.userId, "your")
 
@@ -212,14 +213,26 @@ const transactionCashout = async (decodedToken: JwtPayload, payload: Partial<ITr
     }
 }
 
-const getTransactionHistory = async (userId: string) => {
+const getTransactionHistory = async (query: Record<string, string>, userId: string) => {
     const isWalletExist = await Wallet.findOne({ user: userId })
     if (!isWalletExist) {
         throw new AppError(httpStatusCode.NOT_FOUND, "wallet not found")
     }
-    return await Transaction.find({
-        $or: [{ senderWallet: isWalletExist }, { receiverWallet: isWalletExist }]
-    });
+    const queryBuilder = new QueryBuilder(Transaction.find({$or:[{senderWallet:isWalletExist._id},{receiverWallet:isWalletExist._id}]}), query,userId)
+    const transaction = queryBuilder
+        // .search(transactionSearchableFields)
+        .filter()
+        .sort()
+        .fields()
+        .paginate()
+
+    const data = await transaction.build()
+
+    // const [data, meta] = await Promise.all([
+    //     queryBuilder.getMeta()
+    // ])
+
+    return data
 }
 
 const getAllTransaction = async () => {

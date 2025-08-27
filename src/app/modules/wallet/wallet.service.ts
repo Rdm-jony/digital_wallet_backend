@@ -3,7 +3,7 @@ import { Wallet } from "./wallet.model"
 import httpStatusCode from "http-status-codes"
 
 const getWallet = async (userId: string) => {
-    const isWalletExist = await Wallet.findOne({ user: userId })
+    const isWalletExist = await Wallet.findOne({ user: userId }).populate("user")
     if (!isWalletExist) {
         throw new AppError(httpStatusCode.NOT_FOUND, "no wallet found")
     }
@@ -40,8 +40,8 @@ const unblockWallet = async (walletId: string) => {
     await isWalletExist.save()
 }
 
-const getAllWallet=async()=>{
-    const allWallet= await Wallet.find({})
+const getAllWallet = async () => {
+    const allWallet = await Wallet.find({}).populate("user")
     return allWallet
 }
 

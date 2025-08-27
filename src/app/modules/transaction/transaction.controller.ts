@@ -63,7 +63,8 @@ const transactionCashout = (catchAsync(async (req: Request, res: Response) => {
 }))
 const getTransactionHistory = (catchAsync(async (req: Request, res: Response) => {
     const decodedToken = req.user as JwtPayload
-    const transactionHistory = await transactionService.getTransactionHistory(decodedToken.userId)
+    const query=req.query as Record<string,string>
+    const transactionHistory = await transactionService.getTransactionHistory(query,decodedToken.userId)
 
     sendResponse(res, {
         data: transactionHistory,
