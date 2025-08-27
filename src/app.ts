@@ -14,9 +14,10 @@ const app = express()
 
 app.use(express.json())
 app.use(cookieParser())
-app.set("trust proxy",1)
+app.set("trust proxy", 1)
 app.use(cors({
-    origin: envVars.FRONT_END_URL,
+    origin: ["http://localhost:5173", // local dev
+        "https://digital-wallet-frontend-five.vercel.app"],// production frontend],
     credentials: true
 }))
 app.use(
