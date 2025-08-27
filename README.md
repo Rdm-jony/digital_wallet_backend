@@ -227,7 +227,7 @@ https://localhost:5000/api/v1  (local)
 
 👉 [Postman Collection Link](https://jonydas.postman.co/workspace/jony-das's-Workspace~ba583e4b-416b-40d4-8462-1752c44cad0a/request/43952441-ac79ad7e-0345-4ab7-9273-3fe8169ddba5?action=share&creator=43952441&ctx=documentation)
 
-📦 Base URL: `http://localhost:5000/api/v1`
+📦 Base URL: `https://digital-wallet-beckend.vercel.app/api/v1`
 
 🛠 Features Covered:
 - ✅ User Registration & Management

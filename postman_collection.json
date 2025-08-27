@@ -32,7 +32,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/user/create",
+							"raw": "https://digital-wallet-beckend.vercel.app/api/v1/user/create",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -70,7 +70,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/user/create",
+							"raw": "https://digital-wallet-beckend.vercel.app/api/v1/user/create",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -154,7 +154,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/auth/login",
+							"raw": "https://digital-wallet-beckend.vercel.app/api/v1/auth/login",
 							"protocol": "https",
 							"host": [
 								"digital-wallet-beckend",
@@ -218,7 +218,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/v1/auth/reset-password",
+							"raw": "https://digital-wallet-beckend.vercel.app/v1/auth/reset-password",
 							"protocol": "https",
 							"host": [
 								"digital-wallet-beckend",
@@ -278,7 +278,7 @@
 							"raw": "{\r\n    \"senderWallet\":\"\",\r\n    \"amount\":0\r\n}"
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transaction/withdraw",
+							"raw": "https://digital-wallet-beckend.vercel.app/api/v1/transaction/withdraw",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -304,7 +304,7 @@
 							"raw": "{\r\n    \"senderWallet\":\"\",\r\n    \"amount\":0\r\n}"
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transaction/withdraw",
+							"raw": "https://digital-wallet-beckend.vercel.app/api/v1/transaction/withdraw",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -330,7 +330,7 @@
 							"raw": "{\r\n    \"senderWallet\":\"\",\r\n    \"amount\":0\r\n}"
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transaction/withdraw",
+							"raw": "https://digital-wallet-beckend.vercel.app/api/v1/transaction/withdraw",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -356,7 +356,7 @@
 							"raw": "{\r\n    \"senderWallet\":\"\",\r\n    \"amount\":0\r\n}"
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transaction/withdraw",
+							"raw": "https://digital-wallet-beckend.vercel.app/api/v1/transaction/withdraw",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -393,7 +393,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/v1/transaction/topup",
+							"raw": "https://digital-wallet-beckend.vercel.app/api/v1/transaction/topup",
 							"protocol": "http",
 							"host": [
 								"localhost"
